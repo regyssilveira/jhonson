@@ -6,6 +6,6 @@
 	"mainsrc": "src/",
 	"projects": [],
 	"dependencies": {
-		"github.com/HashLoad/horse": "^3.1.0"
+		"github.com/HashLoad/horse": "^3.3.0"
 	}
 }
