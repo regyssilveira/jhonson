@@ -195,6 +195,8 @@ begin
       {$IF CompilerVersion >= 36}
       LJSONOutputOption: TJSONValue.TJsonOutputOptions;
       {$IFEND}
+      LObj: TObject;
+      LIsOwnedByRequest: Boolean;
     begin
       if (Req.MethodType in [mtPost, mtPut, mtPatch]) and (Pos('application/json', LowerCase(Req.RawWebRequest.ContentType)) > 0) then
       begin
@@ -238,7 +240,20 @@ begin
           begin
             Res.RawWebResponse.Content := TJson.ObjectToJsonString(Res.Content);
             Res.RawWebResponse.ContentType := 'application/json; charset=' + ACharset;
-            Res.Content(nil);
+            LIsOwnedByRequest := False;
+            if Assigned(Req.State) then
+            begin
+              for LObj in Req.State.Values do
+              begin
+                if LObj = Res.Content then
+                begin
+                  LIsOwnedByRequest := True;
+                  Break;
+                end;
+              end;
+            end;
+            if LIsOwnedByRequest then
+              Res.Content(nil);
           end;
         end;
       end;
@@ -269,6 +284,8 @@ begin
     var
       LJSON: TJsonData;
       LBodyStr: string;
+      LObj: TObject;
+      LIsOwnedByRequest: Boolean;
     begin
       if (Req.MethodType in [mtPost, mtPut, mtPatch]) and (Pos('application/json', LowerCase(Req.RawWebRequest.ContentType)) > 0) then
       begin
@@ -307,7 +324,20 @@ begin
           begin
             Res.RawWebResponse.ContentStream := TStringStream.Create(ClassToJsonFPC(Res.Content));
             Res.RawWebResponse.ContentType := 'application/json; charset=' + ACharset;
-            Res.Content(nil);
+            LIsOwnedByRequest := False;
+            if Assigned(Req.State) then
+            begin
+              for LObj in Req.State.Values do
+              begin
+                if LObj = Res.Content then
+                begin
+                  LIsOwnedByRequest := True;
+                  Break;
+                end;
+              end;
+            end;
+            if LIsOwnedByRequest then
+              Res.Content(nil);
           end;
         end;
       end;
@@ -321,6 +351,8 @@ procedure MiddlewareFPCLegacy(Req: THorseRequest; Res: THorseResponse; Next: TNe
 var
   LJSON: TJsonData;
   LBodyStr: string;
+  LObj: TObject;
+  LIsOwnedByRequest: Boolean;
 begin
   if (Req.MethodType in [mtPost, mtPut, mtPatch]) and (Pos('application/json', LowerCase(Req.RawWebRequest.ContentType)) > 0) then
   begin
@@ -358,7 +390,20 @@ begin
       begin
         Res.RawWebResponse.ContentStream := TStringStream.Create(ClassToJsonFPC(Res.Content));
         Res.RawWebResponse.ContentType := 'application/json; charset=' + GCharset;
-        Res.Content(nil);
+        LIsOwnedByRequest := False;
+        if Assigned(Req.State) then
+        begin
+          for LObj in Req.State.Values do
+          begin
+            if LObj = Res.Content then
+            begin
+              LIsOwnedByRequest := True;
+              Break;
+            end;
+          end;
+        end;
+        if LIsOwnedByRequest then
+          Res.Content(nil);
       end;
     end;
   end;

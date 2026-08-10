@@ -43,6 +43,7 @@ type
     procedure TestResponseJSONSerialization;
     procedure TestCharsetHeaderUTF8;
     procedure TestBodyAsClass;
+    procedure TestClassLeak;
     procedure TestPerformanceBenchmark;
   end;
 
@@ -118,6 +119,18 @@ begin
       LEntity: TTestEntity;
     begin
       LEntity := Req.BodyAs<TTestEntity>;
+      Res.Send<TTestEntity>(LEntity);
+    end));
+
+  // Rota /class_leak (testa memory leak com classe instanciada manualmente)
+  THorse.Get('/class_leak',
+    THorseCallback(procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
+    var
+      LEntity: TTestEntity;
+    begin
+      LEntity := TTestEntity.Create;
+      LEntity.Id := 999;
+      LEntity.Nome := 'Manual';
       Res.Send<TTestEntity>(LEntity);
     end));
 
@@ -281,6 +294,16 @@ begin
   finally
     LStream.Free;
   end;
+end;
+
+procedure TTestHorseJhonson.TestClassLeak;
+var
+  LResponse: IHTTPResponse;
+begin
+  LResponse := FClient.Get(BASE_URL + '/class_leak');
+  CheckEquals(200, LResponse.StatusCode, 'Status do GET class_leak invalido');
+  CheckTrue(Pos('"id":999', LResponse.ContentAsString) > 0, 'Propriedade Id de class_leak incorreta');
+  CheckTrue(Pos('"nome":"Manual"', LResponse.ContentAsString) > 0, 'Propriedade Nome de class_leak incorreta');
 end;
 
 procedure TTestHorseJhonson.TestPerformanceBenchmark;
